@@ -105,7 +105,9 @@ static void announce_and_cleanup(void)
 #endif
 
 #ifdef CONFIG_USB_DEVICE
+#ifndef CONFIG_TUNA
 	udc_disconnect();
+#endif
 #endif
 
 #ifdef CONFIG_DRIVER_OMAP34XX_I2C
