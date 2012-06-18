@@ -317,6 +317,12 @@ void board_init_f(ulong bootflag)
 	 * Ram is setup, size stored in gd !!
 	 */
 	debug("ramsize: %08lX\n", gd->ram_size);
+
+#ifdef CONFIG_TUNA
+	//XXX: hack RAM for tuna to work around it being set to zero	
+	gd->ram_size = (1024 << 20);
+#endif
+
 #if defined(CONFIG_SYS_MEM_TOP_HIDE)
 	/*
 	 * Subtract specified amount of memory to hide so that it won't
