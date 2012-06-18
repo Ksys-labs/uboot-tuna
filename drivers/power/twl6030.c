@@ -185,8 +185,10 @@ void twl6030_init_battery_charging(void)
 void twl6030_power_mmc_init()
 {
 	/* set voltage to 3.0 and turnon for APP */
-	twl6030_i2c_write_u8(TWL6030_CHIP_PM, 0x15, VMMC_CFG_VOLTATE);
+	twl6030_i2c_write_u8(TWL6030_CHIP_PM, 0x1, 0x98);
+	twl6030_i2c_write_u8(TWL6030_CHIP_PM, 0x3, 0x99);
 	twl6030_i2c_write_u8(TWL6030_CHIP_PM, 0x21, VMMC_CFG_STATE);
+	twl6030_i2c_write_u8(TWL6030_CHIP_PM, 0x15, VMMC_CFG_VOLTATE);
 }
 
 void twl6030_usb_device_settings()
