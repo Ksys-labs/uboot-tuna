@@ -481,3 +481,19 @@ int i2c_get_bus_num(void)
 {
 	return (int) current_bus;
 }
+
+void omap_i2c_deinit(void) {
+	int i;
+	for (i = 0; i < I2C_BUS_MAX; i++) {
+		if (i2c_set_bus_num(i)) {
+			continue;
+		}
+	
+		writew(0, &i2c_base->ie);
+		writew(0, &i2c_base->con);
+		flush_fifo();
+		writew(0, &i2c_base->cnt);
+		writew(0xFFFF, &i2c_base->stat);
+		udelay(50000);
+	}
+}
