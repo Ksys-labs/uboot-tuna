@@ -202,4 +202,16 @@ void twl6030_usb_device_settings()
 	/* Select the input supply for VBUS regulator */
 	twl6030_i2c_write_u8(TWL6030_CHIP_PM, data, MISC2);
 }
+
+#define APP_DEVOFF	(1<<0)
+#define CON_DEVOFF	(1<<1)
+#define MOD_DEVOFF	(1<<2)
+
+void twl6030_system_shutdown() {
+	u8 data;
+	
+	twl6030_i2c_read_u8(TWL6030_CHIP_PM, &data, TWL6030_PHOENIX_DEV_ON);
+	data |= APP_DEVOFF | CON_DEVOFF | MOD_DEVOFF;
+	twl6030_i2c_write_u8(TWL6030_CHIP_PM, data, TWL6030_PHOENIX_DEV_ON);
+}
 #endif
