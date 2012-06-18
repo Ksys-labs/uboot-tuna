@@ -42,6 +42,10 @@
 #include <asm/ehci-omap.h>
 #endif
 
+#ifdef CONFIG_TWL6030_POWER
+#include <twl6030.h>
+#endif
+
 #define PANDA_ULPI_PHY_TYPE_GPIO       182
 
 DECLARE_GLOBAL_DATA_PTR;
