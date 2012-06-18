@@ -26,6 +26,7 @@
 #ifndef USE_HOSTCC
 #include <common.h>
 #include <watchdog.h>
+#include <android_image.h>
 
 #ifdef CONFIG_SHOW_BOOT_PROGRESS
 #include <status_led.h>
@@ -690,7 +691,13 @@ int genimg_get_format(void *img_addr)
 			format = IMAGE_FORMAT_FIT;
 	}
 #endif
-
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	if (format == IMAGE_FORMAT_INVALID) {
+		const struct andr_img_hdr *ahdr = img_addr;
+		if (!memcmp(ANDR_BOOT_MAGIC, ahdr->magic, ANDR_BOOT_MAGIC_SIZE))
+			format = IMAGE_FORMAT_ANDROID;
+	}
+#endif
 	return format;
 }
 
@@ -1039,7 +1046,16 @@ int boot_get_ramdisk(int argc, char * const argv[], bootm_headers_t *images,
 				(ulong)images->legacy_hdr_os);
 
 		image_multi_getimg(images->legacy_hdr_os, 1, &rd_data, &rd_len);
-	} else {
+	}
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	else if (images->ahdr && images->ahdr->ramdisk_size) {
+		rd_data = (unsigned long)images->ahdr;
+		rd_data += images->ahdr->page_size;
+		rd_data += ALIGN(images->ahdr->kernel_size, images->ahdr->page_size);
+		rd_len = images->ahdr->ramdisk_size;
+	}
+#endif
+	else {
 		/*
 		 * no initrd image
 		 */

@@ -37,6 +37,7 @@
 #include <linux/ctype.h>
 #include <asm/byteorder.h>
 #include <linux/compiler.h>
+#include <android_image.h>
 
 #if defined(CONFIG_CMD_USB)
 #include <usb.h>
@@ -158,6 +159,28 @@ static boot_os_fn *boot_os[] = {
 #endif
 };
 
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+static u32 android_img_get_end(struct andr_img_hdr *hdr)
+{
+	u32 size = 0;
+	/*
+	 * The header takes a full page, the remaining components are aligned
+	 * on page boundary
+	 */
+	size += hdr->page_size;
+	size += ALIGN(hdr->kernel_size, hdr->page_size);
+	size += ALIGN(hdr->ramdisk_size, hdr->page_size);
+	size += ALIGN(hdr->second_size, hdr->page_size);
+
+	return size;
+}
+
+static u32 android_img_get_kload(struct andr_img_hdr *hdr)
+{
+	return hdr->kernel_addr;
+}
+#endif
+
 bootm_headers_t images;		/* pointers to os/initrd/fdt images */
 
 /* Allow for arch specific config before we boot */
@@ -194,6 +217,7 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 {
 	void		*os_hdr;
 	int		ret;
+	int             img_type;
 
 	memset((void *)&images, 0, sizeof(images));
 	images.verify = getenv_yesno("verify");
@@ -211,7 +235,8 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 	}
 
 	/* get image parameters */
-	switch (genimg_get_format(os_hdr)) {
+	img_type = genimg_get_format(os_hdr);
+	switch (img_type) {
 	case IMAGE_FORMAT_LEGACY:
 		images.os.type = image_get_type(os_hdr);
 		images.os.comp = image_get_comp(os_hdr);
@@ -253,6 +278,16 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 		}
 		break;
 #endif
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	case IMAGE_FORMAT_ANDROID:
+	images.os.type = IH_TYPE_KERNEL;
+	images.os.comp = IH_COMP_NONE;
+	images.os.os = IH_OS_LINUX;
+
+	images.os.end = android_img_get_end(os_hdr);
+	images.os.load = android_img_get_kload(os_hdr);
+	break;
+#endif
 	default:
 		puts("ERROR: unknown image format type!\n");
 		return 1;
@@ -269,6 +304,10 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			puts("Can't get entry point property!\n");
 			return 1;
 		}
+#endif
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	} else if (img_type == IMAGE_FORMAT_ANDROID) {
+		images.ep = images.os.load;
 #endif
 	} else {
 		puts("Could not find kernel entry point!\n");
@@ -830,6 +869,36 @@ static int fit_check_kernel(const void *fit, int os_noffset, int verify)
 }
 #endif /* CONFIG_FIT */
 
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+static char andr_tmp_str[ANDR_BOOT_ARGS_SIZE + 1];
+static int android_image_get_kernel(struct andr_img_hdr *hdr, int verify)
+{
+       /*
+        * Not all Android tools use the id field for signing the image with
+        * sha1 (or anything) so we don't check it. It is not obvious that the
+        * string is null terminated so we take care of this.
+        */
+       strncpy(andr_tmp_str, hdr->name, ANDR_BOOT_NAME_SIZE);
+       andr_tmp_str[ANDR_BOOT_NAME_SIZE] = '\0';
+       if (strlen(andr_tmp_str))
+               printf("Android's image name: %s\n", andr_tmp_str);
+
+       printf("Kernel load addr 0x%08x size %u KiB\n",
+                       hdr->kernel_addr, DIV_ROUND_UP(hdr->kernel_size, 1024));
+       strncpy(andr_tmp_str, hdr->cmdline, ANDR_BOOT_ARGS_SIZE);
+       andr_tmp_str[ANDR_BOOT_ARGS_SIZE] = '\0';
+       if (strlen(andr_tmp_str)) {
+               printf("Kernel command line: %s\n", andr_tmp_str);
+               setenv("bootargs", andr_tmp_str);
+       }
+       if (hdr->ramdisk_size)
+               printf("RAM disk load addr 0x%08x size %u KiB\n",
+                               hdr->ramdisk_addr,
+                               DIV_ROUND_UP(hdr->ramdisk_size, 1024));
+       return 0;
+}
+#endif
+
 /**
  * boot_get_kernel - find kernel image
  * @os_data: pointer to a ulong variable, will hold os data start address
@@ -856,6 +925,9 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 	size_t		len;
 	int		cfg_noffset;
 	int		os_noffset;
+#endif
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+       struct andr_img_hdr *ahdr;
 #endif
 
 	/* find out kernel image address */
@@ -1010,6 +1082,19 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 		images->fit_hdr_os = fit_hdr;
 		images->fit_uname_os = fit_uname_kernel;
 		images->fit_noffset_os = os_noffset;
+		break;
+#endif
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	case IMAGE_FORMAT_ANDROID:
+		printf("## Booting Android Image at 0x%08lx ...\n", img_addr);
+		ahdr = (void *)img_addr;
+		if (android_image_get_kernel(ahdr, images->verify))
+			return NULL;
+
+		*os_data = img_addr;
+		*os_data += ahdr->page_size;
+		*os_len = ahdr->kernel_size;
+		images->ahdr = ahdr;
 		break;
 #endif
 	default:

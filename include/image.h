@@ -268,6 +268,9 @@ typedef struct bootm_headers {
 #ifdef CONFIG_LMB
 	struct lmb	lmb;		/* for memory mgmt */
 #endif
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+       struct andr_img_hdr     *ahdr;
+#endif
 } bootm_headers_t;
 
 extern bootm_headers_t images;
@@ -335,6 +338,7 @@ void genimg_print_size(uint32_t size);
 #define IMAGE_FORMAT_INVALID	0x00
 #define IMAGE_FORMAT_LEGACY	0x01	/* legacy image_header based format */
 #define IMAGE_FORMAT_FIT	0x02	/* new, libfdt based format */
+#define IMAGE_FORMAT_ANDROID   0x03    /* Android boot image */
 
 int genimg_get_format(void *img_addr);
 int genimg_has_config(bootm_headers_t *images);
