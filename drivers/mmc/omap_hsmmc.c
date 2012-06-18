@@ -60,7 +60,11 @@ static void omap4_vmmc_pbias_config(struct mmc *mmc)
 	/* set VMMC to 3V */
 	twl6030_power_mmc_init();
 	value = readl(&ctrl->control_pbiaslite);
-	value |= MMC1_PBIASLITE_VMODE | MMC1_PBIASLITE_PWRDNZ | MMC1_PWRDNZ;
+
+	value |= MMC1_PBIASLITE_PWRDNZ | MMC1_PWRDNZ;
+#ifndef OMAP4_MMC_NO_VMODE
+	value |= MMC1_PBIASLITE_VMODE;
+#endif
 	writel(value, &ctrl->control_pbiaslite);
 }
 #endif
