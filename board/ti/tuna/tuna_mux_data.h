@@ -77,14 +77,14 @@ const struct pad_conf_entry wkup_padconf_array_essential_4460[] = {
 };
 
 const struct pad_conf_entry core_padconf_array_non_essential[] = {
-	{GPMC_AD8, (PTU | IEN | OFF_EN | OFF_PD | OFF_IN | M3)},	/* gpio_32 */
-	{GPMC_AD9, (PTU | IEN | M3)},					/* gpio_33 */
-	{GPMC_AD10, (PTU | IEN | M3)},					/* gpio_34 */
-	{GPMC_AD11, (PTU | IEN | M3)},					/* gpio_35 */
-	{GPMC_AD12, (PTU | IEN | M3)},					/* gpio_36 */
-	{GPMC_AD13, (PTD | OFF_EN | OFF_PD | OFF_OUT_PTD | M3)},	/* gpio_37 */
-	{GPMC_AD14, (PTD | OFF_EN | OFF_PD | OFF_OUT_PTD | M3)},	/* gpio_38 */
-	{GPMC_AD15, (PTD | OFF_EN | OFF_PD | OFF_OUT_PTD | M3)},	/* gpio_39 */
+	{GPMC_AD8, (PTU | IDIS | OFF_EN | OFF_PD | OFF_IN | M0)},	/* gpio_32 */
+	{GPMC_AD9, (PTU | IDIS | M0)},					/* gpio_33 */
+	{GPMC_AD10, (PTU | IDIS | M0)},					/* gpio_34 */
+	{GPMC_AD11, (PTU | IDIS | M0)},					/* gpio_35 */
+	{GPMC_AD12, (PTU | IDIS | M0)},					/* gpio_36 */
+	{GPMC_AD13, (PTU | OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},	/* gpio_37 */
+	{GPMC_AD14, (PTU | OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},	/* gpio_38 */
+	{GPMC_AD15, (PTU | OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},	/* gpio_39 */
 	{GPMC_A16, (M3)},						/* gpio_40 */
 	{GPMC_A17, (PTD | M3)},						/* gpio_41 */
 	{GPMC_A18, (PTU | IEN | OFF_EN | OFF_PD | OFF_IN | M1)},	/* kpd_row6 */
@@ -96,25 +96,25 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{GPMC_A24, (PTD | M3)},						/* gpio_48 */
 	{GPMC_A25, (PTD | M3)},						/* gpio_49 */
 	{GPMC_NCS0, (M3)},						/* gpio_50 */
-	{GPMC_NCS1, (IEN | M3)},					/* gpio_51 */
+	{GPMC_NCS1, (M0)}, /* tuna:gpmc_ncs1 */
 	{GPMC_NCS2, (IEN | M3)},					/* gpio_52 */
 	{GPMC_NCS3, (IEN | M3)},					/* gpio_53 */
 	{GPMC_NWP, (M3)},						/* gpio_54 */
 	{GPMC_CLK, (PTD | M3)},						/* gpio_55 */
-	{GPMC_NADV_ALE, (M3)},						/* gpio_56 */
+	{GPMC_NADV_ALE, (M0)},						/* tuna:gpmc_nadv_ale */
 	{GPMC_NBE0_CLE, (M3)},						/* gpio_59 */
-	{GPMC_NBE1, (PTD | M3)},					/* gpio_60 */
+	{GPMC_NBE1, (M0)},					/* tuna:gpmc_nbe1 */
 	
 	//Pull down, mode3
 	{GPMC_WAIT0, (PTU | IEN | M3)},					/* gpio_61 */
 	
-	{GPMC_WAIT1,  (PTD | OFF_EN | OFF_PD | OFF_OUT_PTD | M3)},	/* gpio_62 */
+	{GPMC_WAIT1,  (DIS | IEN | OFF_EN | OFF_PD | OFF_OUT_PTD | M3)},	/* gpio_62 */
 	{C2C_DATA11, (PTD | M3)},					/* gpio_100 */
 	{C2C_DATA12, (PTU | IEN | M3)},					/* gpio_101 */
 	{C2C_DATA13, (PTD | M3)},					/* gpio_102 */
 	{C2C_DATA14, (M1)},						/* dsi2_te0 */
 	{C2C_DATA15, (PTD | M3)},					/* gpio_104 */
-	{HDMI_HPD, (M0)},						/* hdmi_hpd */
+	{HDMI_HPD, (M3)},						/* hdmi_hpd */
 	{HDMI_CEC, (M0)},						/* hdmi_cec */
 	{HDMI_DDC_SCL, (PTU | M0)},					/* hdmi_ddc_scl */
 	{HDMI_DDC_SDA, (PTU | IEN | M0)},				/* hdmi_ddc_sda */
@@ -139,8 +139,10 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{CSI22_DY0, (IEN | M0)},					/* csi22_dy0 */
 	{CSI22_DX1, (IEN | M0)},					/* csi22_dx1 */
 	{CSI22_DY1, (IEN | M0)},					/* csi22_dy1 */
-	{CAM_SHUTTER, (OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},		/* cam_shutter */
-	{CAM_STROBE, (OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},		/* cam_strobe */
+	{CAM_SHUTTER, (M0 | OFF_OUT_PTD | PTD | IEN)},
+	{CAM_STROBE, (M0 | OFF_OUT_PTD | PTD | IEN)},
+	//{CAM_SHUTTER, (OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},		/* cam_shutter */
+	//{CAM_STROBE, (OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},		/* cam_strobe */
 	{CAM_GLOBALRESET, (PTD | OFF_EN | OFF_PD | OFF_OUT_PTD | M3)},	/* gpio_83 */
 	{USBB1_ULPITLL_CLK, (PTD | IEN | OFF_EN | OFF_PD | OFF_IN | M4)},/* usbb1_ulpiphy_clk */
 	{USBB1_ULPITLL_STP, (OFF_EN | OFF_OUT_PTD | M4)},		/* usbb1_ulpiphy_stp */
@@ -183,7 +185,7 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	
 	
 	{HDQ_SIO, (M3)},						/* gpio_127 */
-	{MCSPI1_CLK, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},		/* mcspi1_clk */
+	{MCSPI1_CLK, (DIS | IDIS | M3)},		/* tuna:gpio_134 */
 	{MCSPI1_SOMI, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},		/* mcspi1_somi */
 	{MCSPI1_SIMO, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},		/* mcspi1_simo */
 	{MCSPI1_CS0, (PTD | IEN | OFF_EN | OFF_PD | OFF_IN | M0)},	/* mcspi1_cs0 */
@@ -218,8 +220,8 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{USBB2_ULPITLL_DIR, (IEN | M5)},				/* dispc2_data22 */
 	{USBB2_ULPITLL_NXT, (IEN | M5)},				/* dispc2_data21 */
 	{USBB2_ULPITLL_DAT0, (IEN | M5)},				/* dispc2_data20 */
-	{USBB2_ULPITLL_DAT1, (IEN | M5)},				/* dispc2_data19 */
-	{USBB2_ULPITLL_DAT2, (IEN | M5)},				/* dispc2_data18 */
+	{USBB2_ULPITLL_DAT1, (PTD | IDIS | M3)},				/* tuna: gpio_162 */
+	{USBB2_ULPITLL_DAT2, (PTU | IDIS | M3)},				/* tuna: gpio_163 */
 	{USBB2_ULPITLL_DAT3, (IEN | M5)},				/* dispc2_data15 */
 	{USBB2_ULPITLL_DAT4, (IEN | M5)},				/* dispc2_data14 */
 	{USBB2_ULPITLL_DAT5, (IEN | M5)},				/* dispc2_data13 */
@@ -246,8 +248,8 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{USBA0_OTG_CE, (PTD | OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},	/* usba0_otg_ce */
 	{USBA0_OTG_DP, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},		/* usba0_otg_dp */
 	{USBA0_OTG_DM, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},		/* usba0_otg_dm */
-	{FREF_CLK1_OUT, (M0|EN)},						/* fref_clk1_out */
-	{FREF_CLK2_OUT, (PTU | IEN | M3)},				/* gpio_182 */
+	{FREF_CLK1_OUT, (M0)},						/* fref_clk1_out */
+	{FREF_CLK2_OUT, (M0)},				/* tuna:fref_clk2_out */
 	{SYS_NIRQ1, (PTU | IEN | M0)},					/* sys_nirq1 */
 	{SYS_NIRQ2, (PTU | IEN | M0)},					/* sys_nirq2 */
 	{SYS_BOOT0, (PTU | IEN | M3)},					/* gpio_184 */
@@ -259,7 +261,7 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{DPM_EMU0, (IEN | M0)},						/* dpm_emu0 */
 	{DPM_EMU1, (IEN | M0)},						/* dpm_emu1 */
 	{DPM_EMU2, (IEN | M0)},						/* dpm_emu2 */
-	{DPM_EMU3, (IEN | M5)},						/* dispc2_data10 */
+	{DPM_EMU3, (IEN | M3)},						/* dispc2_data10 */
 	{DPM_EMU4, (IEN | M5)},						/* dispc2_data9 */
 	{DPM_EMU5, (IEN | M5)},						/* dispc2_data16 */
 	{DPM_EMU6, (IEN | M5)},						/* dispc2_data17 */
@@ -278,7 +280,7 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{DPM_EMU16, (M3)},						/* gpio_27 */
 	{DPM_EMU17, (IEN | M5)},					/* dispc2_data2 */
 	{DPM_EMU18, (IEN | M5)},					/* dispc2_data1 */
-	{DPM_EMU19, (IEN | M5)},					/* dispc2_data0 */
+	{DPM_EMU19, (IEN | M3)},					/* dispc2_data0 */
 };
 
 const struct pad_conf_entry core_padconf_array_non_essential_4430[] = {
@@ -286,7 +288,7 @@ const struct pad_conf_entry core_padconf_array_non_essential_4430[] = {
 };
 
 const struct pad_conf_entry core_padconf_array_non_essential_4460[] = {
-	{ABE_MCBSP2_CLKX, (PTU | OFF_EN | OFF_OUT_PTU | M3)},		/* led status_1 */
+	{ABE_MCBSP2_CLKX, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},	/* abe_mcbsp2_clkx */
 };
 
 const struct pad_conf_entry wkup_padconf_array_non_essential[] = {
@@ -305,7 +307,7 @@ const struct pad_conf_entry wkup_padconf_array_non_essential[] = {
 	{PAD0_SYS_NRESPWRON, (M0)},		/* sys_nrespwron */
 	{PAD1_SYS_NRESWARM, (M0)},		/* sys_nreswarm */
 	{PAD0_SYS_PWR_REQ, (PTU | M0)},		/* sys_pwr_req */
-	{PAD1_SYS_PWRON_RESET, (M3)},		/* gpio_wk29 */
+	{PAD1_SYS_PWRON_RESET, (IEN | M3)},		/* tuna: gpio_wk29 */
 	{PAD0_SYS_BOOT6, (IEN | M3)},		/* gpio_wk9 */
 	{PAD1_SYS_BOOT7, (IEN | M3)},		/* gpio_wk10 */
 };
