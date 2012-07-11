@@ -46,7 +46,7 @@
 #include <twl6030.h>
 #endif
 
-#define PANDA_ULPI_PHY_TYPE_GPIO       182
+#define TUNA_GPIO_USB3333_RESETB 159
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -348,6 +348,7 @@ int board_init(void)
 	//we want to always reinit mux regardless of what
 	//the code in arch/arm/cpu/armv7/omap-common is thinking
 	set_muxconf_regs_essential();
+	set_muxconf_regs_non_essential();
 	gpmc_init();
 
 	gd->bd->bi_arch_number = MACH_TYPE_TUNA;
@@ -371,10 +372,7 @@ int board_eth_init(bd_t *bis)
 }
 
 /**
- * @brief misc_init_r - Configure Panda board specific configurations
- * such as power configurations, ethernet initialization as phase2 of
- * boot sequence
- *
+ * @brief misc_init_r - set up tuna misc hardware (currently ULPI PHY clock)
  * @return 0
  */
 int misc_init_r(void)
@@ -382,44 +380,23 @@ int misc_init_r(void)
 	int phy_type;
 	u32 auxclk, altclksrc;
 
-	/* EHCI is not supported on ES1.0 */
-	if (omap_revision() == OMAP4430_ES1_0)
-		return 0;
+	gpio_direction_output(TUNA_GPIO_USB3333_RESETB, 0);
+	gpio_set_value(TUNA_GPIO_USB3333_RESETB, 0);
 
-	gpio_direction_input(PANDA_ULPI_PHY_TYPE_GPIO);
-	phy_type = gpio_get_value(PANDA_ULPI_PHY_TYPE_GPIO);
+	/* ULPI PHY supplied by auxclk3 derived from sys_clk */
+	debug("ULPI PHY supplied by auxclk3\n");
 
-	if (phy_type == 1) {
-		/* ULPI PHY supplied by auxclk3 derived from sys_clk */
-		debug("ULPI PHY supplied by auxclk3\n");
+	auxclk = readl(&scrm->auxclk3);
+	/* Select sys_clk */
+	auxclk &= ~AUXCLK_SRCSELECT_MASK;
+	auxclk |=  AUXCLK_SRCSELECT_SYS_CLK << AUXCLK_SRCSELECT_SHIFT;
+	/* Set the divisor to 2 */
+	auxclk &= ~AUXCLK_CLKDIV_MASK;
+	auxclk |= AUXCLK_CLKDIV_2 << AUXCLK_CLKDIV_SHIFT;
+	/* Request auxilary clock #3 */
+	auxclk |= AUXCLK_ENABLE_MASK;
 
-		auxclk = readl(&scrm->auxclk3);
-		/* Select sys_clk */
-		auxclk &= ~AUXCLK_SRCSELECT_MASK;
-		auxclk |=  AUXCLK_SRCSELECT_SYS_CLK << AUXCLK_SRCSELECT_SHIFT;
-		/* Set the divisor to 2 */
-		auxclk &= ~AUXCLK_CLKDIV_MASK;
-		auxclk |= AUXCLK_CLKDIV_2 << AUXCLK_CLKDIV_SHIFT;
-		/* Request auxilary clock #3 */
-		auxclk |= AUXCLK_ENABLE_MASK;
-
-		writel(auxclk, &scrm->auxclk3);
-       } else {
-		/* ULPI PHY supplied by auxclk1 derived from PER dpll */
-		debug("ULPI PHY supplied by auxclk1\n");
-
-		auxclk = readl(&scrm->auxclk1);
-		/* Select per DPLL */
-		auxclk &= ~AUXCLK_SRCSELECT_MASK;
-		auxclk |=  AUXCLK_SRCSELECT_PER_DPLL << AUXCLK_SRCSELECT_SHIFT;
-		/* Set the divisor to 16 */
-		auxclk &= ~AUXCLK_CLKDIV_MASK;
-		auxclk |= AUXCLK_CLKDIV_16 << AUXCLK_CLKDIV_SHIFT;
-		/* Request auxilary clock #3 */
-		auxclk |= AUXCLK_ENABLE_MASK;
-
-		writel(auxclk, &scrm->auxclk1);
-	}
+	writel(auxclk, &scrm->auxclk3);
 
 	altclksrc = readl(&scrm->altclksrc);
 
@@ -429,8 +406,10 @@ int misc_init_r(void)
 
 	/* enable clocks */
 	altclksrc |= ALTCLKSRC_ENABLE_INT_MASK | ALTCLKSRC_ENABLE_EXT_MASK;
-
 	writel(altclksrc, &scrm->altclksrc);
+	
+	mdelay(1);
+	gpio_set_value(TUNA_GPIO_USB3333_RESETB, 1);
 	return 0;
 }
 
