@@ -542,6 +542,21 @@ static void musb_peri_ep0_rx(void)
 	}
 }
 
+static int musb_peri_wait_tx_done(int ep) {
+	int pm, p;
+	u16 csr0;
+	/* Wait a bit */
+	pm = 10;
+	for (p = 0; p < pm; p++) {
+		csr0 = readw(&musbr->ep[ep].ep0.csr0);
+		if (!(csr0 & MUSB_CSR0_TXPKTRDY))
+			break;
+
+		/* Double the delay. */
+		udelay(1 << pm);
+	}
+}
+
 static void musb_peri_ep0_tx(void)
 {
 	u16 csr0;
@@ -584,17 +599,9 @@ static void musb_peri_ep0_tx(void)
 		musb_ep0_tx_ready_and_last();
 	else
 		musb_ep0_tx_ready();
-
+	
 	/* Wait a bit */
-	pm = 10;
-	for (p = 0; p < pm; p++) {
-		csr0 = readw(&musbr->ep[0].ep0.csr0);
-		if (!(csr0 & MUSB_CSR0_TXPKTRDY))
-			break;
-
-		/* Double the delay. */
-		udelay(1 << pm);
-	}
+	musb_peri_wait_tx_done(0);
 
 	if ((ep0_endpoint->sent >= ep0_urb->actual_length) && (p < pm))
 		SET_EP0_STATE(IDLE);
@@ -862,6 +869,8 @@ int udc_endpoint_write(struct usb_endpoint_instance *endpoint)
 			/* usbd_tx_complete will take care of updating 'sent' */
 			usbd_tx_complete(endpoint);
 		}
+	
+		musb_peri_wait_tx_done(ep);
 	} else {
 		if (debug_level > 0)
 			serial_printf("ERROR : %s Problem with urb %p "
