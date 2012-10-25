@@ -76,7 +76,7 @@ static void tuna_clear_i2c4(void) {
 #define TUNA_TYPE_MAGURO	0x00
 #define TUNA_TYPE_MASK		0x10
 
-static int tuna_hw_rev = -1;
+static int tuna_hw_rev = 0;
 
 static const char const *omap4_tuna_hw_name_maguro[] = {
 	[0x00] = "Toro Lunchbox #1",
@@ -137,7 +137,7 @@ static const char *omap4_tuna_hw_rev_name(void) {
 static void gnex_get_revision(void) {
 	size_t i;
 	int revision = 0;
-	unsigned gpios[] = {
+	static unsigned gpios[] = {
 		76,
 		75,
 		74,
@@ -153,9 +153,12 @@ static void gnex_get_revision(void) {
 	
 	for (i = 0; i < ARRAY_SIZE(gpios); i++) {
 		gpio_direction_input(gpios[i]);
-		revision |= (gpio_get_value(gpios[i]) << i);
+		revision |= (!!gpio_get_value(gpios[i])) << i;
 	}
+
 	tuna_hw_rev = revision;
+	printf("Tuna revision %d: %s\n",
+		tuna_hw_rev, omap4_tuna_hw_rev_name());
 }
 
 int do_tuna_print_revision(cmd_tbl_t *cmdtp, int flag,
@@ -166,7 +169,6 @@ int do_tuna_print_revision(cmd_tbl_t *cmdtp, int flag,
 	if (!rev_name) {
 		return -1;
 	}
-	printf("Tuna revision %d: %s\n", tuna_hw_rev, rev_name);
 	return 0;
 }
 
