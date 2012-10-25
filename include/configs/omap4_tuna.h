@@ -351,9 +351,9 @@
 									"stdout=vga\0" \
 									"stderr=vga\0"
 #else
-	#define CONFIG_STD_DEVICES_SETTINGS "stdin=usbtty\0" \
-									"stdout=usbtty\0" \
-									"stderr=usbtty\0"
+	#define CONFIG_STD_DEVICES_SETTINGS "stdin=serial\0" \
+									"stdout=serial\0" \
+									"stderr=serial\0"
 #endif
 
 /*
