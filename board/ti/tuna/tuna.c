@@ -188,39 +188,61 @@ void get_board_serial(struct tag_serialnr *serialnr) {
 /******************************************************************************
  * Color led control
  *****************************************************************************/
-static void tuna_set_led(int color) {
+enum {
+	RGB_LED_ADDR = 0x30,
+	RGB_REG_RESET = 0,
+	RGB_REG_RESET_VAL = 1,
+
+	RGB_REG_SELECT = 1,
+	RGB_REG_ENABLE = 2,
+
+	RGB_REG_RED = 3,
+	RGB_REG_GREEN = 4,
+	RGB_REG_BLUE = 5,
+
+	RGB_LED_RED = 1,
+	RGB_LED_GREEN = 2,
+	RGB_LED_BLUE = 4,
+	RGB_LED_MASK = 7,
+};
+
+static void an30259_set_led(unsigned chip_addr, int color) {
 	u8 val, reg;
 
-	tuna_clear_i2c4();
-	i2c_set_bus_num(3);
-
 	//reset
-	reg = 0;
-	val = 1;
-	i2c_write(0x30, reg, 1, &val, 1);
+	reg = RGB_REG_RESET;
+	val = RGB_REG_RESET_VAL;
+	i2c_write(chip_addr, reg, 1, &val, 1);
 
 	//led select
-	reg = 1;
-	val = color & 7;
-	i2c_write(0x30, reg, 1, &val, 1);
+	reg = RGB_REG_SELECT;
+	val = color & RGB_LED_MASK;
+	i2c_write(chip_addr, reg, 1, &val, 1);
 
 	//led enable
-	reg = 2;
-	val = color & 7;
-	i2c_write(0x30, reg, 1, &val, 1);
+	reg = RGB_REG_ENABLE;
+	val = color & RGB_LED_MASK;
+	i2c_write(chip_addr, reg, 1, &val, 1);
 	
-	reg = 3;
-	val = color & 1 ? 0xff : 0;
-	i2c_write(0x30, reg, 1, &val, 1);
+	reg = RGB_REG_RED;
+	val = color & RGB_LED_RED ? 0xff : 0;
+	i2c_write(chip_addr, reg, 1, &val, 1);
 
-	reg = 4;
-	val = color & 2 ? 0xff : 0;
-	i2c_write(0x30, reg, 1, &val, 1);
+	reg = RGB_REG_GREEN;
+	val = color & RGB_LED_GREEN ? 0xff : 0;
+	i2c_write(chip_addr, reg, 1, &val, 1);
 
-	reg = 5;
-	val = color & 4 ? 0xff : 0;
-	i2c_write(0x30, reg, 1, &val, 1);
+	reg = RGB_REG_BLUE;
+	val = color & RGB_LED_BLUE ? 0xff : 0;
+	i2c_write(chip_addr, reg, 1, &val, 1);
+}
 
+#define TUNA_AN30259_ADDR 0x30
+
+static void tuna_set_led(int color) {
+	tuna_clear_i2c4();
+	i2c_set_bus_num(3);
+	an30259_set_led(TUNA_AN30259_ADDR, color);
 	i2c_set_bus_num(0);
 }
 
@@ -230,7 +252,9 @@ int do_tuna_set_led(cmd_tbl_t *cmdtp, int flag,
 	if (argc < 2) {
 		return -1;
 	}
+	
 	tuna_set_led(argv[1][0] - '0');
+
 	return 0;
 }
 
