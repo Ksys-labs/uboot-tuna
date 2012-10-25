@@ -281,6 +281,7 @@
 		"mmc dev 0; " \
 		"mmc part; " \
 		"tuna_get_bootmode; " \
+		"tuna_check_cable; " \
 		"if test $tuna_bootmode_val -eq 0; then " \
 			"echo Regular boot; " \
 			"run boot_system; " \
@@ -379,9 +380,9 @@
 	#define CONFIG_VIDEO
 	#define CONFIG_CFB_CONSOLE
 	#define CONFIG_VGA_AS_SINGLE_DEVICE
-	#define CONFIG_STD_DEVICES_SETTINGS "stdin=vga\0" \
-									"stdout=vga\0" \
-									"stderr=vga\0"
+	#define CONFIG_STD_DEVICES_SETTINGS "stdin=vga,serial\0" \
+									"stdout=vga,serial\0" \
+									"stderr=vga,serial\0"
 #else
 	#define CONFIG_STD_DEVICES_SETTINGS "stdin=serial\0" \
 									"stdout=serial\0" \

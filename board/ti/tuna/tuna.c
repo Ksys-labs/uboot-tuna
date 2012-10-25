@@ -51,7 +51,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 const struct omap_sysinfo sysinfo = {
-	"Board: OMAP4 Panda\n"
+	"Board: OMAP4 Tuna\n"
 };
 
 struct omap4_scrm_regs *const scrm = (struct omap4_scrm_regs *)0x4a30a000;
@@ -345,6 +345,374 @@ U_BOOT_CMD(tuna_get_bootmode, CONFIG_SYS_MAXARGS, 1, do_tuna_get_bootmode,
 );
 
 /******************************************************************************
+ * FSA9480 USB Detection (XXX: factor out to a separate driver)
+ *****************************************************************************/
+typedef enum {
+	FSA9480_UNKNOWN,
+	FSA9480_USB,
+	FSA9480_USB_HOST,
+	FSA9480_CHARGER,
+	FSA9480_JIG,
+	FSA9480_UART,
+	FSA9480_AV_365K, //what is that?
+	FSA9480_AV_365K_CHARGER,
+} fsa9480_dev_t;
+
+#define FSA9480_REG_DEVID		0x01
+#define FSA9480_REG_CTRL		0x02
+#define FSA9480_REG_INT1		0x03
+#define FSA9480_REG_INT2		0x04
+#define FSA9480_REG_INT1_MASK		0x05
+#define FSA9480_REG_INT2_MASK		0x06
+#define FSA9480_REG_ADC			0x07
+#define FSA9480_REG_TIMING1		0x08
+#define FSA9480_REG_TIMING2		0x09
+#define FSA9480_REG_DEV_T1		0x0a
+#define FSA9480_REG_DEV_T2		0x0b
+#define FSA9480_REG_BTN1		0x0c
+#define FSA9480_REG_BTN2		0x0d
+#define FSA9480_REG_CK			0x0e
+#define FSA9480_REG_CK_INT1		0x0f
+#define FSA9480_REG_CK_INT2		0x10
+#define FSA9480_REG_CK_INTMASK1		0x11
+#define FSA9480_REG_CK_INTMASK2		0x12
+#define FSA9480_REG_MANSW1		0x13
+#define FSA9480_REG_MANSW2		0x14
+#define FSA9480_REG_ANALOG_TEST		0x15
+#define FSA9480_REG_SCAN_TEST		0x16
+#define FSA9480_REG_DAC_OVERRIDE_1	0x17
+#define FSA9480_REG_DAC_OVERRIDE_2	0x18
+#define FSA9480_REG_VIDEO_DETECT	0x19
+#define FSA9480_REG_CK_PULSE_WIDTH	0x1A
+#define FSA9480_REG_MANOVERRIDE1	0x1B
+#define FSA9480_REG_STATUS1		0x1C
+#define FSA9480_REG_STATUS2		0x1D
+#define FSA9480_REG_FUSE1		0x1E
+
+/* Control */
+#define CON_SWITCH_OPEN		(1 << 4)
+#define CON_RAW_DATA		(1 << 3)
+#define CON_MANUAL_SW		(1 << 2)
+#define CON_WAIT		(1 << 1)
+#define CON_INT_MASK		(1 << 0)
+#define CON_MASK		(CON_SWITCH_OPEN | CON_RAW_DATA | \
+				CON_MANUAL_SW | CON_WAIT)
+
+/* we always read these as a word */
+/* Device Type 2 */
+#define DEV_AV			(1 << 14)
+#define DEV_TTY			(1 << 13)
+#define DEV_PPD			(1 << 12)
+#define DEV_JIG_UART_OFF	(1 << 11)
+#define DEV_JIG_UART_ON		(1 << 10)
+#define DEV_JIG_USB_OFF		(1 << 9)
+#define DEV_JIG_USB_ON		(1 << 8)
+/* Device Type 1 */
+#define DEV_USB_OTG		(1 << 7)
+#define DEV_DEDICATED_CHG	(1 << 6)
+#define DEV_USB_CHG		(1 << 5)
+#define DEV_CAR_KIT		(1 << 4)
+#define DEV_UART		(1 << 3)
+#define DEV_USB			(1 << 2)
+#define DEV_AUDIO_2		(1 << 1)
+#define DEV_AUDIO_1		(1 << 0)
+
+#define DEV_USB_MASK		(DEV_USB | DEV_JIG_USB_OFF | DEV_JIG_USB_ON)
+#define DEV_UART_MASK		(DEV_UART | DEV_JIG_UART_OFF)
+#define DEV_JIG_MASK		(DEV_JIG_USB_OFF | DEV_JIG_USB_ON | \
+				 DEV_JIG_UART_OFF | DEV_JIG_UART_ON)
+#define DEV_CHARGER_MASK	(DEV_DEDICATED_CHG | DEV_USB_CHG | DEV_CAR_KIT)
+
+static int smbus_write_word(uint8_t chip, uint8_t addr, uint16_t value) {
+	u8 val[] = {
+		(value >> 8) & 0xff,
+		value & 0xff
+	};
+
+#ifdef DEBUG
+	printf("%s: [chip=%x addr=%x value=%x]\n", __func__, chip, addr, value);
+#endif //DEBUG
+
+	return i2c_write(chip, addr, 1, val, 2);
+}
+
+static int smbus_read_word(uint8_t chip, uint8_t addr, uint16_t *value) {
+	u8 val[2];
+
+	int ret = i2c_read(chip, addr, 1, val, 2);
+	*value = (val[0] << 8) | val[1];
+
+#ifdef DEBUG
+	printf("%s: [chip=%x addr=%x value=%x]\n", __func__, chip, addr, *value);
+#endif //DEBUG
+
+	return ret;
+}
+
+static inline void fsa9480_print_dev_type(fsa9480_dev_t dev) {
+	#define ENUM_ENTRY(x) [x] = #x
+	char *map[] = {
+		ENUM_ENTRY(FSA9480_UNKNOWN),
+		ENUM_ENTRY(FSA9480_USB),
+		ENUM_ENTRY(FSA9480_USB_HOST),
+		ENUM_ENTRY(FSA9480_CHARGER),
+		ENUM_ENTRY(FSA9480_JIG),
+		ENUM_ENTRY(FSA9480_UART),
+		ENUM_ENTRY(FSA9480_AV_365K),
+		ENUM_ENTRY(FSA9480_AV_365K_CHARGER),
+	};
+	#undef ENUM_ENTRY
+	if (sizeof(map) / sizeof(map[0]) <= dev) {
+		return;
+	}
+	printf("FSA9480: device type is %s\n", map[dev]);
+}
+
+fsa9480_dev_t fsa9480_detect_device(uint8_t chip_addr) {
+	uint16_t dev_type, int_val;
+	int i;
+	fsa9480_dev_t ret = FSA9480_UNKNOWN;
+
+	for (i = 0; i < 100; i++) {
+		int _ok = smbus_read_word(chip_addr, FSA9480_REG_INT1, &int_val);
+		if ((_ok < 0) || !int_val)
+		{
+			break;
+		}
+	}
+	mdelay(1000);
+
+	if (smbus_read_word(chip_addr, FSA9480_REG_DEV_T1, &dev_type) < 0) {
+		printf("%s: failed to get device type\n", __func__);
+		goto fail;
+	}
+
+	if (dev_type & DEV_USB_MASK) {
+		ret = FSA9480_USB;
+	}
+	else if (dev_type & DEV_UART_MASK) {
+		ret = FSA9480_UART;
+	}
+	else if (dev_type & DEV_JIG_MASK) {
+		ret = FSA9480_JIG;
+	}
+	else if (dev_type & DEV_CHARGER_MASK) {
+		ret = FSA9480_CHARGER;
+	}
+	else if (dev_type & DEV_USB_OTG) {
+		ret = FSA9480_USB_HOST;
+	}
+
+	fsa9480_print_dev_type(ret);
+
+fail:
+	return ret;
+}
+
+int fsa9480_probe(uint8_t chip_addr) {
+	int i;
+
+	struct {
+		uint8_t reg;
+		uint16_t value;
+	} regs[] = {
+		{
+			.reg = FSA9480_REG_INT1_MASK,
+			.value = 0x1fff,
+		},
+		{
+			.reg = FSA9480_REG_CK_INTMASK1,
+			.value = 0x7ff
+		},
+		{
+			.reg = FSA9480_REG_TIMING1,
+			.value = 500,
+		},
+		{
+			.reg = FSA9480_REG_MANSW1,
+			.value = 0,
+		},
+	};
+	
+
+	for (i = 0; i < sizeof(regs) / sizeof(regs[0]); i++) {
+		if (smbus_write_word(chip_addr, regs[i].reg, regs[i].value) < 0) {
+			printf("%s: failed to write %x -> %x\n",
+				__func__, regs[i].reg, regs[i].value);
+			return -1;
+		}
+	}
+}
+
+/******************************************************************************
+ * Tuna-specific FSA9480 handling ported from linux
+ *****************************************************************************/
+#define TUNA_FSA9480_BUS 3
+#define TUNA_FSA9480_ADDR (0x4a >> 1)
+
+#define TUNA_GPIO_CP_USB_ON	22
+#define TUNA_GPIO_MHL_SEL		96
+#define TUNA_GPIO_AP_SEL		97
+#define TUNA_GPIO_MUX3_SEL0	139
+#define TUNA_GPIO_MUX3_SEL1 140
+#define TUNA_GPIO_IF_UART_SEL 101
+#define TUNA_GPIO_USB_ID_SEL		191
+
+#define MUX3_SEL0_AP		1
+#define MUX3_SEL1_AP		1
+#define MUX3_SEL0_MHL		1
+#define MUX3_SEL1_MHL		0
+#define MUX3_SEL0_FSA		0
+#define MUX3_SEL1_FSA		1
+
+#define FSA3200_AP_SEL_AP	0
+#define FSA3200_MHL_SEL_AP	0
+#define FSA3200_AP_SEL_FSA	1
+#define FSA3200_MHL_SEL_FSA	0
+#define FSA3200_AP_SEL_MHL	1
+#define FSA3200_MHL_SEL_MHL	1
+
+#define USB_ID_SEL_FSA		0
+#define USB_ID_SEL_MHL		1
+
+#define IF_UART_SEL_DEFAULT	1
+#define IF_UART_SEL_AP		1
+#define IF_UART_SEL_CP		0
+
+enum {
+	TUNA_USB_MUX_FSA = 0,
+	TUNA_USB_MUX_MHL,
+	TUNA_USB_MUX_AP,
+	NUM_TUNA_USB_MUX,
+
+	TUNA_USB_MUX_DEFAULT = TUNA_USB_MUX_FSA,
+};
+
+static struct {
+	int mux3_sel0;
+	int mux3_sel1;
+} tuna_usb_mux_states[] = {
+	[TUNA_USB_MUX_FSA] = { MUX3_SEL0_FSA, MUX3_SEL1_FSA },
+	[TUNA_USB_MUX_MHL] = { MUX3_SEL0_MHL, MUX3_SEL1_MHL },
+	[TUNA_USB_MUX_AP] = { MUX3_SEL0_AP, MUX3_SEL1_AP },
+};
+
+static struct {
+	int ap_sel;
+	int mhl_sel;
+} tuna_fsa3200_mux_pair_states[] = {
+	[TUNA_USB_MUX_FSA] = { FSA3200_AP_SEL_FSA, FSA3200_MHL_SEL_FSA },
+	[TUNA_USB_MUX_MHL] = { FSA3200_AP_SEL_MHL, FSA3200_MHL_SEL_MHL },
+	[TUNA_USB_MUX_AP] = { FSA3200_AP_SEL_AP, FSA3200_MHL_SEL_AP },
+};
+
+static int tuna_usb_id_mux_states[] = {
+	[TUNA_USB_MUX_FSA] = USB_ID_SEL_FSA,
+	[TUNA_USB_MUX_MHL] = USB_ID_SEL_MHL,
+	[TUNA_USB_MUX_AP] = USB_ID_SEL_FSA,
+};
+
+static void tuna_mux_usb(int state)
+{
+	printf("%s: mux to %d\n", __func__, state);
+	gpio_direction_output(TUNA_GPIO_MUX3_SEL0,
+			      tuna_usb_mux_states[state].mux3_sel0);
+	gpio_direction_output(TUNA_GPIO_MUX3_SEL1,
+			      tuna_usb_mux_states[state].mux3_sel1);
+	gpio_set_value(TUNA_GPIO_MUX3_SEL0,
+			      tuna_usb_mux_states[state].mux3_sel0);
+	gpio_set_value(TUNA_GPIO_MUX3_SEL1,
+			      tuna_usb_mux_states[state].mux3_sel1);
+}
+
+static void tuna_mux_usb_id(int state)
+{
+	printf("%s: mux to %d\n", __func__, state);
+	gpio_direction_output(TUNA_GPIO_USB_ID_SEL,
+		tuna_usb_id_mux_states[state]);
+	gpio_set_value(TUNA_GPIO_USB_ID_SEL,
+		tuna_usb_id_mux_states[state]);
+}
+
+static void tuna_fsa3200_mux_pair(int state)
+{
+	printf("%s: mux to %d\n", __func__, state);
+	gpio_direction_output(TUNA_GPIO_AP_SEL,
+			      tuna_fsa3200_mux_pair_states[state].ap_sel);
+	gpio_direction_output(TUNA_GPIO_MHL_SEL,
+			      tuna_fsa3200_mux_pair_states[state].mhl_sel);
+	gpio_set_value(TUNA_GPIO_AP_SEL,
+			      tuna_fsa3200_mux_pair_states[state].ap_sel);
+	gpio_set_value(TUNA_GPIO_MHL_SEL,
+			      tuna_fsa3200_mux_pair_states[state].mhl_sel);
+}
+
+static void tuna_mux_usb_to_fsa(int enable)
+{
+	if (omap4_tuna_get_revision() >= 3) {
+		tuna_fsa3200_mux_pair(enable ? TUNA_USB_MUX_FSA :
+				TUNA_USB_MUX_DEFAULT);
+	} else {
+		tuna_mux_usb(enable ? TUNA_USB_MUX_FSA : TUNA_USB_MUX_DEFAULT);
+
+		/* When switching ID away from FSA, we want to ensure we switch
+		 * it off FSA, and force it to MHL. Ideally, we'd just say mux
+		 * to default, but FSA is likely the default mux position and
+		 * there's no way to force the ID pin to float to the FSA.
+		 */
+		tuna_mux_usb_id(enable ? TUNA_USB_MUX_FSA : TUNA_USB_MUX_MHL);
+	}
+}
+
+static void tuna_ap_usb_attach(void)
+{
+	if (omap4_tuna_get_revision() >= 3) {
+		tuna_fsa3200_mux_pair(TUNA_USB_MUX_AP);
+	} else {
+		tuna_mux_usb(TUNA_USB_MUX_AP);
+		tuna_mux_usb_id(TUNA_USB_MUX_FSA);
+	}
+}
+
+static void fsa9480_init(void) {
+	tuna_clear_i2c4();
+	i2c_set_bus_num(TUNA_FSA9480_BUS);
+
+	fsa9480_probe(TUNA_FSA9480_ADDR);
+	fsa9480_dev_t fsa_dev_type = fsa9480_detect_device(TUNA_FSA9480_ADDR);
+
+	i2c_set_bus_num(0);
+
+	switch (fsa_dev_type) {
+		case FSA9480_USB:
+			tuna_mux_usb_to_fsa(0);
+			tuna_ap_usb_attach();
+			gpio_direction_output(TUNA_GPIO_IF_UART_SEL, 0);
+			gpio_set_value(TUNA_GPIO_IF_UART_SEL, 0);
+			break;
+		case FSA9480_UART:
+			tuna_mux_usb_to_fsa(1);
+			gpio_direction_output(TUNA_GPIO_IF_UART_SEL, 1);
+			gpio_set_value(TUNA_GPIO_IF_UART_SEL, 1);
+			break;
+		default:
+			break;
+	}
+}
+
+
+int do_tuna_check_cable(cmd_tbl_t *cmdtp, int flag,
+	int argc, char * const argv[])
+{
+	fsa9480_init();
+	return 0;
+}
+
+U_BOOT_CMD(tuna_check_cable, CONFIG_SYS_MAXARGS, 1, do_tuna_check_cable,
+	"Get Tuna (Galaxy Nexus) cable type\n",
+	"tuna_check_cable\n"
+);
+/******************************************************************************
  * Framebuffer
  *****************************************************************************/
 #ifdef CONFIG_VIDEO
@@ -388,10 +756,12 @@ int board_init(void)
 	
 	gd->bd->bi_dram[0].start = 0x80000000;
 	gd->bd->bi_dram[0].size =  0x40000000;
+
+	//get it before board-specific hardware initialization routines are called
+	gnex_get_revision();
 	
 	//indicate we're alive
 	tuna_set_led(5);
-
 	tuna_check_bootflag();
 
 	udc_init();
@@ -410,7 +780,6 @@ int board_eth_init(bd_t *bis)
  */
 int misc_init_r(void)
 {
-	int phy_type;
 	u32 auxclk, altclksrc;
 
 	gpio_direction_output(TUNA_GPIO_USB3333_RESETB, 0);

@@ -33,6 +33,7 @@
 #include <asm/arch/mux_omap4.h>
 
 #define MUX_GPIO_IN3 (PTU | IEN | M3)
+#define MUX_GPIO_OUT3 (EN | M3)
 
 const struct pad_conf_entry core_padconf_array_essential[] = {
 	//OK
@@ -105,7 +106,7 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	
 	{GPMC_WAIT1,  (DIS | IEN | OFF_EN | OFF_PD | OFF_OUT_PTD | M3)},	/* gpio_62 */
 	{C2C_DATA11, (PTD | M3)},					/* gpio_100 */
-	{C2C_DATA12, (PTU | IEN | M3)},					/* gpio_101 */
+	{C2C_DATA12, MUX_GPIO_OUT3},					/* gpio_101 */
 	{C2C_DATA13, (PTD | M3)},					/* gpio_102 */
 	{C2C_DATA14, (M1)},						/* dsi2_te0 */
 	{C2C_DATA15, (PTD | M3)},					/* gpio_104 */
@@ -151,8 +152,8 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{USBB1_ULPITLL_DAT5, (IEN | OFF_EN | OFF_PD | OFF_IN | M4)},	/* usbb1_ulpiphy_dat5 */
 	{USBB1_ULPITLL_DAT6, (IEN | OFF_EN | OFF_PD | OFF_IN | M4)},	/* usbb1_ulpiphy_dat6 */
 	{USBB1_ULPITLL_DAT7, (IEN | OFF_EN | OFF_PD | OFF_IN | M4)},	/* usbb1_ulpiphy_dat7 */
-	{USBB1_HSIC_DATA, (M0)},	/* usbb1_hsic_data */
-	{USBB1_HSIC_STROBE, (M0)},	/* usbb1_hsic_strobe */
+	{USBB1_HSIC_DATA, MUX_GPIO_OUT3},	/* usbb1_hsic_data */
+	{USBB1_HSIC_STROBE, MUX_GPIO_OUT3},	/* usbb1_hsic_strobe */
 	{USBC1_ICUSB_DP, (IEN | M0)},					/* usbc1_icusb_dp */
 	{USBC1_ICUSB_DM, (IEN | M0)},					/* usbc1_icusb_dm */
 	{ABE_MCBSP2_DR, (IEN | OFF_EN | OFF_OUT_PTD | M0)},		/* abe_mcbsp2_dr */
@@ -185,8 +186,8 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{MCSPI1_SIMO, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},		/* mcspi1_simo */
 	{MCSPI1_CS0, (PTD | IEN | OFF_EN | OFF_PD | OFF_IN | M0)},	/* mcspi1_cs0 */
 	{MCSPI1_CS1, (PTD | IEN | OFF_EN | OFF_PD | OFF_IN | M3)},	/* mcspi1_cs1 */
-	{MCSPI1_CS2, (M3)},		/* gpio_139 */
-	{MCSPI1_CS3, (M3)},					/* gpio_140 */
+	{MCSPI1_CS2, MUX_GPIO_OUT3},		/* gpio_139 */
+	{MCSPI1_CS3, MUX_GPIO_OUT3},					/* gpio_140 */
 	{SDMMC5_CLK, (PTU | IEN | OFF_EN | OFF_OUT_PTD | M0)},		/* sdmmc5_clk */
 	{SDMMC5_CMD, (PTU | IEN | OFF_EN | OFF_PD | OFF_IN | M0)},	/* sdmmc5_cmd */
 	{SDMMC5_DAT0, (PTU | IEN | OFF_EN | OFF_PD | OFF_IN | M0)},	/* sdmmc5_dat0 */
@@ -263,18 +264,18 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{DPM_EMU8, (IEN | M5)},						/* dispc2_pclk */
 	{DPM_EMU9, (IEN | M5)},						/* dispc2_vsync */
 	{DPM_EMU10, (IEN | M5)},					/* dispc2_de */
-	{DPM_EMU11, (IEN | M5)},					/* dispc2_data8 */
+	{DPM_EMU11, MUX_GPIO_IN3},					/* dispc2_data8 */
 	//
 	//{DPM_EMU12, (IEN | M5)},					/* dispc2_data7 */
 	{DPM_EMU12, (EN | M0)},				/* LCD Reset on TUNA (Galaxy Nexus) */
 	//
-	{DPM_EMU13, (IEN | M5)},					/* dispc2_data6 */
+	{DPM_EMU13, MUX_GPIO_OUT3},					/* dispc2_data6 */
 	{DPM_EMU14, (IEN | M5)},					/* dispc2_data5 */
 	{DPM_EMU15, (IEN | M5)},					/* dispc2_data4 */
 	{DPM_EMU16, (M3)},						/* gpio_27 */
 	{DPM_EMU17, (IEN | M5)},					/* dispc2_data2 */
 	{DPM_EMU18, (IEN | M5)},					/* dispc2_data1 */
-	{DPM_EMU19, (M3)},					/* dispc2_data0 */
+	{DPM_EMU19, MUX_GPIO_OUT3},					/* dispc2_data0 */
 };
 
 const struct pad_conf_entry core_padconf_array_non_essential_4430[] = {
