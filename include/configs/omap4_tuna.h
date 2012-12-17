@@ -50,7 +50,7 @@
 //#define CONFIG_SKIP_LOWLEVEL_INIT 1
 //#define CONFIG_SYS_DCACHE_OFF 1
 //#define CONFIG_SYS_ICACHE_OFF 1
-//#define CONFIG_SYS_L2CACHE_OFF 1
+#define CONFIG_SYS_L2CACHE_OFF 1
 
 /* Get CPU defs */
 #include <asm/arch/cpu.h>
@@ -104,6 +104,10 @@
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_BAUDRATE_TABLE	{4800, 9600, 19200, 38400, 57600,\
 					115200}
+
+/* GPIO */
+#define CONFIG_OMAP_GPIO	1
+
 /* I2C  */
 #define CONFIG_HARD_I2C			1
 #define CONFIG_SYS_I2C_SPEED		100000
@@ -152,7 +156,7 @@
 #include <config_cmd_default.h>
 
 /* Enabled commands */
-#define CONFIG_CMD_EXT2		/* EXT2 Support                 */
+#define CONFIG_CMD_EXT4		/* EXT4 Support					*/
 #define CONFIG_CMD_FAT		/* FAT support                  */
 #define CONFIG_CMD_I2C		/* I2C serial bus support	*/
 #define CONFIG_CMD_MMC		/* MMC support                  */
@@ -188,6 +192,19 @@
  * 12 -> userdata
  */
 
+#ifdef TUNA_SPL_BUILD
+	#define BOOT_KERNEL "boot_android=echo Booting KERNEL; " \
+		"tuna_set_led 1; " \
+		"setenv bootargs " ANDROID_CMDLINE " ; " \
+		"mmc dev 0; " \
+		"mmc read ${loadaddr} 0x14000 0x4000; "\
+		"echo Command line: ${bootargs}; " \
+		"bootm ${loadaddr}\0"
+
+#else
+	#define BOOT_KERNEL "boot_android=echo Not booting KERNEL recursively;\0"
+#endif
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	\
 	"loadaddr=0x82000000\0" \
@@ -195,22 +212,20 @@
 	"kernel_name=/boot/vmlinux.uimg\0" \
 	"script_img/boot/boot.scr.uimg\0" \
 	\
-	"load_boot_script=if fatload ${devtype} ${devnum}:${script_part} " \
+	"load_boot_script=if ext4load ${devtype} ${devnum}:${script_part} " \
 			"${loadaddr} ${script_img}; then " \
 			"source ${loadaddr}; " \
-		"elif ext2load ${devtype} ${devnum}:${script_part} " \
+		"elif fatload ${devtype} ${devnum}:${script_part} " \
 				"${loadaddr} ${script_img}; then " \
 			"source ${loadaddr}; " \
 		"fi\0" \
 	\
-	"custom_boot=setenv bootargs "\
-			"${dev_extras} root=/dev/${devname}${rootpart} rootwait ro ;"\
-		"echo Load Address:${loadaddr};" \
+	"custom_boot=echo Load Address:${loadaddr};" \
 		"echo Cmdline:${bootargs}; " \
-		"if fatload ${devtype} ${devnum}:${kernel_part} " \
+		"if ext4load ${devtype} ${devnum}:${kernel_part} " \
 			"${loadaddr} ${kernel_name}; then " \
 			"bootm ${loadaddr}; " \
-		"elif ext2load ${devtype} ${devnum}:${kernel_part} " \
+		"elif fatload ${devtype} ${devnum}:${kernel_part} " \
 		            "${loadaddr} ${kernel_name}; then " \
 			"bootm ${loadaddr};" \
 		"fi\0" \
@@ -222,7 +237,17 @@
 		"setenv rootpart 0xc; " \
 		"setenv devnum 0; " \
 		"setenv devtype mmc; " \
+		"setenv bootargs " \
+			"${dev_extras} root=/dev/${devname}${rootpart} rootwait ro ;"\
 		"run load_boot_script; " \
+		"run custom_boot\0" \
+	\
+	"boot_system=echo Booting SYSTEM; "\
+		"tuna_set_led 6; " \
+		"setenv bootargs " ANDROID_CMDLINE " ; " \
+		"setenv kernel_part 0xa; " \
+		"setenv devnum 0; " \
+		"setenv devtype mmc; " \
 		"run custom_boot\0" \
 	\
 	"boot_recovery=echo Booting RECOVERY; " \
@@ -233,14 +258,7 @@
 		"echo Command line: ${bootargs}; " \
 		"bootm ${loadaddr}\0" \
 	\
-	"boot_android=echo Booting ANDROID; " \
-		"tuna_set_led 1; " \
-		"setenv bootargs " ANDROID_CMDLINE " ; " \
-		"mmc dev 0; " \
-		"mmc read ${loadaddr} 0x14000 0x4000; "\
-		"echo Command line: ${bootargs}; " \
-		"bootm ${loadaddr}\0" \
-	\
+	BOOT_KERNEL \
 	"go_usbtty=setenv stdin usbtty; " \
 		"setenv stdout usbtty; " \
 		"setenv stderr usbtty; " \
@@ -253,6 +271,7 @@
 		"if test $tuna_bootmode_val -eq 0; then " \
 			"echo Regular boot; " \
 			"run boot_android; " \
+			"run boot_system; " \
 		"elif test $tuna_bootmode_val -eq 1; then " \
 			"echo Recovery boot; " \
 			"run boot_recovery; " \
