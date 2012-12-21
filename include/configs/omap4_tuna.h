@@ -281,8 +281,8 @@
 		"tuna_get_bootmode; " \
 		"if test $tuna_bootmode_val -eq 0; then " \
 			"echo Regular boot; " \
-			"run boot_android; " \
 			"run boot_system; " \
+			"run boot_android; " \
 		"elif test $tuna_bootmode_val -eq 1; then " \
 			"echo Recovery boot; " \
 			"run boot_recovery; " \
