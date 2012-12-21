@@ -179,6 +179,17 @@
 
 #define CONFIG_ANDROID_BOOT_IMAGE
 
+/* 
+ * since ANDROID's boot partition is only 8M,
+ * we don't probably have to worry about leaving more room for the ramdisk_size
+ *
+ * XXX: ANDROID's boot image loader seems to be broken
+ * when ramdisk address is higher than the kernel one
+ */
+
+#define CONFIG_ANDROID_FORCE_KERNEL_ADDR 0x82808000
+#define CONFIG_ANDROID_FORCE_INITRD_ADDR 0x82000000
+
 #define ANDROID_CMDLINE " mem=1G vmalloc=768M" \
 	" omap_wdt.timer_margin=30" \
 	" mms_ts.panel_id=18" \
