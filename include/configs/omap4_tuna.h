@@ -243,6 +243,8 @@
 	\
 	"boot_custom_emmc=echo Booting custom image; " \
 		"tuna_set_led 4; " \
+		"setenv script_img /media/boot/boot.scr.uimg; " \
+		"setenv kernel_name /media/boot/vmlinux.uimg; " \
 		"setenv script_part 0xc; " \
 		"setenv kernel_part 0xc; " \
 		"setenv rootpart 0xc; " \
