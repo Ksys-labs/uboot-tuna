@@ -17,6 +17,7 @@
 #ifndef __MX6QSABRE_COMMON_CONFIG_H
 #define __MX6QSABRE_COMMON_CONFIG_H
 
+#define CONFIG_MX6
 #define CONFIG_MX6Q
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
@@ -40,7 +41,6 @@
 #define CONFIG_FSL_ESDHC
 #define CONFIG_FSL_USDHC
 #define CONFIG_SYS_FSL_ESDHC_ADDR      0
-#define CONFIG_SYS_FSL_USDHC_NUM       2
 
 #define CONFIG_MMC
 #define CONFIG_CMD_MMC
@@ -72,11 +72,12 @@
 /* Command definition */
 #include <config_cmd_default.h>
 
+#define CONFIG_CMD_BOOTZ
 #undef CONFIG_CMD_IMLS
 
-#define CONFIG_BOOTDELAY               3
+#define CONFIG_BOOTDELAY               1
 
-#define CONFIG_LOADADDR                        0x10800000
+#define CONFIG_LOADADDR                        0x12000000
 #define CONFIG_SYS_TEXT_BASE           0x17800000
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
@@ -164,7 +165,6 @@
 
 #if defined(CONFIG_ENV_IS_IN_MMC)
 #define CONFIG_ENV_OFFSET		(6 * 64 * 1024)
-#define CONFIG_SYS_MMC_ENV_DEV		0
 #endif
 
 #define CONFIG_OF_LIBFDT

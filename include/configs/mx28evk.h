@@ -238,7 +238,7 @@
  */
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
-#define CONFIG_BOOTDELAY	3
+#define CONFIG_BOOTDELAY	1
 #define CONFIG_BOOTFILE	"uImage"
 #define CONFIG_LOADADDR	0x42000000
 #define CONFIG_SYS_LOAD_ADDR	CONFIG_LOADADDR
@@ -263,7 +263,7 @@
 		"if tftp ${update_nand_full_filename} ; then " \
 		"run update_nand_get_fcb_size ; " \
 		"nand scrub -y 0x0 ${filesize} ; " \
-		"nand write.raw ${loadaddr} 0x0 ${update_nand_fcb} ; " \
+		"nand write.raw ${loadaddr} 0x0 ${fcb_sz} ; " \
 		"setexpr update_off ${loadaddr} + ${update_nand_fcb} ; " \
 		"setexpr update_sz ${filesize} - ${update_nand_fcb} ; " \
 		"nand write ${update_off} ${update_nand_fcb} ${update_sz} ; " \
