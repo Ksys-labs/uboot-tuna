@@ -45,7 +45,7 @@
 #define CONFIG_OMAP44XX		1	/* which is a 44XX */
 #define CONFIG_OMAP4430		1	/* which is in a 4430 */
 
-#define TUNA_SPL_BUILD
+//#define TUNA_SPL_BUILD
 
 //#define CONFIG_SKIP_LOWLEVEL_INIT 1
 //#define CONFIG_SYS_DCACHE_OFF 1
@@ -128,29 +128,42 @@
 #define OMAP4_MMC_NO_VMODE 1
 
 /* USB */
-#define CONFIG_MUSB_UDC			1
-#define CONFIG_USB_OMAP3		1
+#if 0
+	#define CONFIG_USB_GADGET
+	#define CONFIG_CMD_DFU
+	#define CONFIG_USBDOWNLOAD_GADGET
+	#define CONFIG_DFU_FUNCTION
+	#define CONFIG_DFU_MMC
+	#define CONFIG_G_DNL_VENDOR_NUM 0x04E8
+	#define CONFIG_G_DNL_PRODUCT_NUM 0x6601
+	#define CONFIG_G_DNL_MANUFACTURER "Samsung"
+#else
+	#define CONFIG_USBD_MANUFACTURER "Samsung"
+	#define CONFIG_USBD_PRODUCT_NAME "Galaxy Nexus"
+	#define CONFIG_USB_ETHER
+	#define CONFIG_USB_ETHER_RNDIS
+	#define CONFIG_SYS_USB_EVENT_POLL
+#endif
+
+#define CONFIG_USB_GADGET_VBUS_DRAW	2
+#define CONFIG_USB_GADGET_DUALSPEED
+
+#define CONFIG_USB_OMAP3 1
+#define CONFIG_ARCH_OMAP4
+#define CONFIG_USB_MUSB_HDRC
+#define CONFIG_USB_GADGET_MUSB_HDRC
+
+#define CONFIG_MUSB_GADGET
+#define CONFIG_USB_MUSB_OMAP2PLUS
+#define CONFIG_MUSB_PIO_ONLY
+
 #define CONFIG_USB_ULPI
 #define CONFIG_USB_ULPI_VIEWPORT_OMAP
-
-/* USB Product */
-#define CONFIG_USBD_MANUFACTURER "Samsung"
-#define CONFIG_USBD_PRODUCT_NAME "Galaxy Nexus"
-
-/* USB device configuration */
-#define CONFIG_USB_DEVICE		1
-#define CONFIG_USB_TTY			1
-#define CONFIG_EXTRA_ENV_USBTTY "usbtty=cdc_acm\0"
 
 //#define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
 /* Flash */
 #define CONFIG_SYS_NO_FLASH	1
-
-/* clocks */
-#if 0
-#define CONFIG_SYS_CLOCKS_ENABLE_ALL
-#endif
 
 /* commands to include */
 #include <config_cmd_default.h>
@@ -162,8 +175,10 @@
 #define CONFIG_CMD_MMC		/* MMC support                  */
 #define CONFIG_CMD_BOOTZ
 
+#define CONFIG_CMD_NET
+
 /* Disabled commands */
-#undef CONFIG_CMD_NET
+//#undef CONFIG_CMD_NET
 #undef CONFIG_CMD_NFS
 #undef CONFIG_CMD_FPGA		/* FPGA configuration Support   */
 #undef CONFIG_CMD_IMLS		/* List all found images        */
@@ -216,8 +231,16 @@
 	#define BOOT_KERNEL "boot_android=echo Not booting KERNEL recursively;\0"
 #endif
 
+#define CONFIG_DFU_ALT \
+	"dfu_alt_info=" \
+	"u-boot mmc 80 400\0" \
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	\
+	CONFIG_DFU_ALT \
+	\
+	"usbnet_devaddr=01:23:45:67:89:ab\0" \
+	"usbnet_hostaddr=01:23:45:67:89:af\0" \
 	"loadaddr=0x82000000\0" \
 	"usbtty=cdc_acm\0" \
 	"kernel_name=/boot/vmlinux.uimg\0" \
@@ -279,7 +302,6 @@
 	\
 	"tuna_boot=mmc rescan; " \
 		"mmc dev 0; " \
-		"mmc part; " \
 		"tuna_get_bootmode; " \
 		"tuna_check_cable; " \
 		"if test $tuna_bootmode_val -eq 0; then " \
@@ -294,7 +316,8 @@
 			"run boot_custom_emmc; " \
 		"elif test $tuna_bootmode_val -eq 3; then " \
 			"echo USB TTY mode; " \
-			"run go_usbtty; " \
+			"usb start; " \
+			"usb reset; " \
 			"exit 0; " \
 		"fi; " \
 		"tuna_set_led 7; " \

@@ -36,6 +36,12 @@
 
 #include "tuna_mux_data.h"
 
+#include <asm/omap_musb.h>
+#include <asm/errno.h>
+#include <linux/usb/ch9.h>
+#include <linux/usb/gadget.h>
+#include <linux/usb/musb.h>
+
 #ifdef CONFIG_USB_EHCI
 #include <usb.h>
 #include <asm/arch/ehci.h>
@@ -542,6 +548,7 @@ int fsa9480_probe(uint8_t chip_addr) {
 			return -1;
 		}
 	}
+	return 0;
 }
 
 /******************************************************************************
@@ -764,15 +771,43 @@ int board_init(void)
 	tuna_set_led(5);
 	tuna_check_bootflag();
 
-	udc_init();
+	//udc_init();
 
 	return 0;
 }
 
+#if defined(CONFIG_USB_ETHER)
 int board_eth_init(bd_t *bis)
 {
-	return 0;
+	cpu_eth_init(bis);
+	#if defined(CONFIG_MUSB_GADGET)
+		return usb_eth_initialize(bis);
+	#else
+		return 0;
+	#endif
 }
+#endif
+
+#ifdef CONFIG_USB_MUSB_OMAP2PLUS
+static struct musb_hdrc_config musb_config = {
+	.multipoint     = 1,
+	.dyn_fifo       = 1,
+	.num_eps        = 16,
+	.ram_bits       = 12,
+};
+
+static struct omap_musb_board_data musb_board_data = {
+	.interface_type	= MUSB_INTERFACE_ULPI,
+};
+
+static struct musb_hdrc_platform_data musb_plat = {
+	.mode		= MUSB_PERIPHERAL,
+	.config         = &musb_config,
+	.power          = 100,
+	.platform_ops	= &omap2430_ops,
+	.board_data	= &musb_board_data,
+};
+#endif
 
 /**
  * @brief misc_init_r - set up tuna misc hardware (currently ULPI PHY clock)
@@ -780,6 +815,7 @@ int board_eth_init(bd_t *bis)
  */
 int misc_init_r(void)
 {
+#if 0
 	u32 auxclk, altclksrc;
 
 	gpio_direction_output(TUNA_GPIO_USB3333_RESETB, 0);
@@ -812,6 +848,23 @@ int misc_init_r(void)
 	
 	mdelay(1);
 	gpio_set_value(TUNA_GPIO_USB3333_RESETB, 1);
+#endif	
+
+#ifdef CONFIG_USB_MUSB_OMAP2PLUS
+	#define SCM_BASE 0x4a002000
+
+	u32 tmp;
+	
+	tmp = readl(SCM_BASE + 0x300);
+	writel(tmp & ~1, SCM_BASE + 0x300);
+
+	tmp = readl(SCM_BASE + 0x33c);
+	tmp |= (1 | (1 << 2));
+	tmp &= ~((1 << 3) | (1 << 4));
+	writel(tmp, SCM_BASE + 0x33c);
+
+	musb_register(&musb_plat, &musb_board_data, (void *)MUSB_BASE);
+#endif
 	return 0;
 }
 
@@ -878,8 +931,12 @@ int board_mmc_init(bd_t *bis)
 }
 #endif
 
-#ifdef CONFIG_USB_EHCI
+void board_usb_init(void) {
+	printf("%s\n", __func__);
+	//musb_register(&musb_plat, &musb_board_data, (void *)MUSB_BASE);
+}
 
+#ifdef CONFIG_USB_EHCI
 static struct omap_usbhs_board_data usbhs_bdata = {
 	.port_mode[0] = OMAP_EHCI_PORT_MODE_PHY,
 	.port_mode[1] = OMAP_USBHS_PORT_MODE_UNUSED,
