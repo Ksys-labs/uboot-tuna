@@ -169,7 +169,7 @@
 #include <config_cmd_default.h>
 
 /* Enabled commands */
-#define CONFIG_CMD_EXT4		/* EXT4 Support					*/
+#define CONFIG_CMD_EXT2		/* EXT2 Support					*/
 #define CONFIG_CMD_FAT		/* FAT support                  */
 #define CONFIG_CMD_I2C		/* I2C serial bus support	*/
 #define CONFIG_CMD_MMC		/* MMC support                  */
@@ -246,7 +246,7 @@
 	"kernel_name=/boot/vmlinux.uimg\0" \
 	"script_img/boot/boot.scr.uimg\0" \
 	\
-	"load_boot_script=if ext4load ${devtype} ${devnum}:${script_part} " \
+	"load_boot_script=if ext2load ${devtype} ${devnum}:${script_part} " \
 			"${loadaddr} ${script_img}; then " \
 			"source ${loadaddr}; " \
 		"elif fatload ${devtype} ${devnum}:${script_part} " \
@@ -256,7 +256,7 @@
 	\
 	"custom_boot=echo Load Address:${loadaddr};" \
 		"echo Cmdline:${bootargs}; " \
-		"if ext4load ${devtype} ${devnum}:${kernel_part} " \
+		"if ext2load ${devtype} ${devnum}:${kernel_part} " \
 			"${loadaddr} ${kernel_name}; then " \
 			"bootm ${loadaddr}; " \
 		"elif fatload ${devtype} ${devnum}:${kernel_part} " \
@@ -268,9 +268,9 @@
 		"tuna_set_led 4; " \
 		"setenv script_img /media/boot/boot.scr.uimg; " \
 		"setenv kernel_name /media/boot/vmlinux.uimg; " \
-		"setenv script_part 0xc; " \
-		"setenv kernel_part 0xc; " \
-		"setenv rootpart 0xc; " \
+		"setenv script_part 0xb; " \
+		"setenv kernel_part 0xb; " \
+		"setenv rootpart 0xb; " \
 		"setenv devnum 0; " \
 		"setenv devtype mmc; " \
 		"setenv bootargs " \
