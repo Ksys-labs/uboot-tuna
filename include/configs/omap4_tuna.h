@@ -141,18 +141,14 @@
 	#define CONFIG_USBD_MANUFACTURER "Samsung"
 	#define CONFIG_USBD_PRODUCT_NAME "Galaxy Nexus"
 	#define CONFIG_USB_ETHER
-	#define CONFIG_USB_ETHER_RNDIS
+	#define CONFIG_USB_ETH_RNDIS
 	#define CONFIG_SYS_USB_EVENT_POLL
 #endif
 
-#define CONFIG_USB_GADGET_VBUS_DRAW	2
+#define CONFIG_USB_GADGET_VBUS_DRAW	500
 #define CONFIG_USB_GADGET_DUALSPEED
 
-#define CONFIG_USB_OMAP3 1
-#define CONFIG_ARCH_OMAP4
-#define CONFIG_USB_MUSB_HDRC
-#define CONFIG_USB_GADGET_MUSB_HDRC
-
+#define CONFIG_ARCH_OMAP4 1
 #define CONFIG_MUSB_GADGET
 #define CONFIG_USB_MUSB_OMAP2PLUS
 #define CONFIG_MUSB_PIO_ONLY
@@ -176,6 +172,7 @@
 #define CONFIG_CMD_BOOTZ
 
 #define CONFIG_CMD_NET
+#define CONFIG_CMD_DHCP
 
 /* Disabled commands */
 //#undef CONFIG_CMD_NET
@@ -239,8 +236,8 @@
 	\
 	CONFIG_DFU_ALT \
 	\
-	"usbnet_devaddr=01:23:45:67:89:ab\0" \
-	"usbnet_hostaddr=01:23:45:67:89:af\0" \
+	"usbnet_devaddr=f0:bf:97:e4:e5:e6\0" \
+	"usbnet_hostaddr=f0:bf:97:e4:e5:ef\0" \
 	"loadaddr=0x82000000\0" \
 	"usbtty=cdc_acm\0" \
 	"kernel_name=/boot/vmlinux.uimg\0" \
@@ -316,8 +313,7 @@
 			"run boot_custom_emmc; " \
 		"elif test $tuna_bootmode_val -eq 3; then " \
 			"echo USB TTY mode; " \
-			"usb start; " \
-			"usb reset; " \
+			"dhcp; " \
 			"exit 0; " \
 		"fi; " \
 		"tuna_set_led 7; " \

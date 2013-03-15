@@ -771,8 +771,6 @@ int board_init(void)
 	tuna_set_led(5);
 	tuna_check_bootflag();
 
-	//udc_init();
-
 	return 0;
 }
 
@@ -797,13 +795,13 @@ static struct musb_hdrc_config musb_config = {
 };
 
 static struct omap_musb_board_data musb_board_data = {
-	.interface_type	= MUSB_INTERFACE_ULPI,
+	.interface_type	= MUSB_INTERFACE_UTMI,
 };
 
 static struct musb_hdrc_platform_data musb_plat = {
 	.mode		= MUSB_PERIPHERAL,
 	.config         = &musb_config,
-	.power          = 100,
+	.power          = 500,
 	.platform_ops	= &omap2430_ops,
 	.board_data	= &musb_board_data,
 };
@@ -815,56 +813,7 @@ static struct musb_hdrc_platform_data musb_plat = {
  */
 int misc_init_r(void)
 {
-#if 0
-	u32 auxclk, altclksrc;
-
-	gpio_direction_output(TUNA_GPIO_USB3333_RESETB, 0);
-	gpio_set_value(TUNA_GPIO_USB3333_RESETB, 0);
-
-	/* ULPI PHY supplied by auxclk3 derived from sys_clk */
-	debug("ULPI PHY supplied by auxclk3\n");
-
-	auxclk = readl(&scrm->auxclk3);
-	/* Select sys_clk */
-	auxclk &= ~AUXCLK_SRCSELECT_MASK;
-	auxclk |=  AUXCLK_SRCSELECT_SYS_CLK << AUXCLK_SRCSELECT_SHIFT;
-	/* Set the divisor to 2 */
-	auxclk &= ~AUXCLK_CLKDIV_MASK;
-	auxclk |= AUXCLK_CLKDIV_2 << AUXCLK_CLKDIV_SHIFT;
-	/* Request auxilary clock #3 */
-	auxclk |= AUXCLK_ENABLE_MASK;
-
-	writel(auxclk, &scrm->auxclk3);
-
-	altclksrc = readl(&scrm->altclksrc);
-
-	/* Activate alternate system clock supplier */
-	altclksrc &= ~ALTCLKSRC_MODE_MASK;
-	altclksrc |= ALTCLKSRC_MODE_ACTIVE;
-
-	/* enable clocks */
-	altclksrc |= ALTCLKSRC_ENABLE_INT_MASK | ALTCLKSRC_ENABLE_EXT_MASK;
-	writel(altclksrc, &scrm->altclksrc);
-	
-	mdelay(1);
-	gpio_set_value(TUNA_GPIO_USB3333_RESETB, 1);
-#endif	
-
-#ifdef CONFIG_USB_MUSB_OMAP2PLUS
-	#define SCM_BASE 0x4a002000
-
-	u32 tmp;
-	
-	tmp = readl(SCM_BASE + 0x300);
-	writel(tmp & ~1, SCM_BASE + 0x300);
-
-	tmp = readl(SCM_BASE + 0x33c);
-	tmp |= (1 | (1 << 2));
-	tmp &= ~((1 << 3) | (1 << 4));
-	writel(tmp, SCM_BASE + 0x33c);
-
 	musb_register(&musb_plat, &musb_board_data, (void *)MUSB_BASE);
-#endif
 	return 0;
 }
 
@@ -932,39 +881,7 @@ int board_mmc_init(bd_t *bis)
 #endif
 
 void board_usb_init(void) {
-	printf("%s\n", __func__);
-	//musb_register(&musb_plat, &musb_board_data, (void *)MUSB_BASE);
 }
-
-#ifdef CONFIG_USB_EHCI
-static struct omap_usbhs_board_data usbhs_bdata = {
-	.port_mode[0] = OMAP_EHCI_PORT_MODE_PHY,
-	.port_mode[1] = OMAP_USBHS_PORT_MODE_UNUSED,
-	.port_mode[2] = OMAP_USBHS_PORT_MODE_UNUSED,
-};
-
-int ehci_hcd_init(void)
-{
-	int ret;
-	unsigned int utmi_clk;
-
-	/* Now we can enable our port clocks */
-	utmi_clk = readl((void *)CM_L3INIT_HSUSBHOST_CLKCTRL);
-	utmi_clk |= HSUSBHOST_CLKCTRL_CLKSEL_UTMI_P1_MASK;
-	sr32((void *)CM_L3INIT_HSUSBHOST_CLKCTRL, 0, 32, utmi_clk);
-
-	ret = omap_ehci_hcd_init(&usbhs_bdata);
-	if (ret < 0)
-		return ret;
-
-	return 0;
-}
-
-int ehci_hcd_stop(void)
-{
-	return omap_ehci_hcd_stop();
-}
-#endif
 
 /*
  * get_board_rev() - get board revision

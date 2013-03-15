@@ -241,8 +241,8 @@ const struct pad_conf_entry core_padconf_array_non_essential[] = {
 	{UNIPRO_RX2, (PTU | IEN | OFF_EN | OFF_PD | OFF_IN | M1)},	/* kpd_row4 */
 	{UNIPRO_RY2, (PTU | IEN | OFF_EN | OFF_PD | OFF_IN | M1)},	/* kpd_row5 */
 	{USBA0_OTG_CE, (PTD | OFF_EN | OFF_PD | OFF_OUT_PTD | M0)},	/* usba0_otg_ce */
-	{USBA0_OTG_DP, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},		/* usba0_otg_dp */
-	{USBA0_OTG_DM, (IEN | OFF_EN | OFF_PD | OFF_IN | M0)},		/* usba0_otg_dm */
+	{USBA0_OTG_DP, (IEN | M0)},		/* usba0_otg_dp */
+	{USBA0_OTG_DM, (IEN | M0)},		/* usba0_otg_dm */
 	{FREF_CLK1_OUT, (M0)},						/* fref_clk1_out */
 	{FREF_CLK2_OUT, (M0)},				/* tuna:fref_clk2_out */
 	{SYS_NIRQ1, (PTU | IEN | M0)},					/* sys_nirq1 */
