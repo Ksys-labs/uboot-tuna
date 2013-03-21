@@ -128,22 +128,11 @@
 #define OMAP4_MMC_NO_VMODE 1
 
 /* USB */
-#if 0
-	#define CONFIG_USB_GADGET
-	#define CONFIG_CMD_DFU
-	#define CONFIG_USBDOWNLOAD_GADGET
-	#define CONFIG_DFU_FUNCTION
-	#define CONFIG_DFU_MMC
-	#define CONFIG_G_DNL_VENDOR_NUM 0x04E8
-	#define CONFIG_G_DNL_PRODUCT_NUM 0x6601
-	#define CONFIG_G_DNL_MANUFACTURER "Samsung"
-#else
-	#define CONFIG_USBD_MANUFACTURER "Samsung"
-	#define CONFIG_USBD_PRODUCT_NAME "Galaxy Nexus"
-	#define CONFIG_USB_ETHER
-	#define CONFIG_USB_ETH_RNDIS
-	#define CONFIG_SYS_USB_EVENT_POLL
-#endif
+#define CONFIG_USBD_MANUFACTURER "Samsung"
+#define CONFIG_USBD_PRODUCT_NAME "Galaxy Nexus"
+#define CONFIG_USB_ETHER
+#define CONFIG_USB_ETH_RNDIS
+#define CONFIG_SYS_USB_EVENT_POLL
 
 #define CONFIG_USB_GADGET_VBUS_DRAW	500
 #define CONFIG_USB_GADGET_DUALSPEED
@@ -228,14 +217,7 @@
 	#define BOOT_KERNEL "boot_android=echo Not booting KERNEL recursively;\0"
 #endif
 
-#define CONFIG_DFU_ALT \
-	"dfu_alt_info=" \
-	"u-boot mmc 80 400\0" \
-
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	\
-	CONFIG_DFU_ALT \
-	\
 	"usbnet_devaddr=f0:bf:97:e4:e5:e6\0" \
 	"usbnet_hostaddr=f0:bf:97:e4:e5:ef\0" \
 	"loadaddr=0x82000000\0" \
@@ -265,9 +247,9 @@
 		"tuna_set_led 4; " \
 		"setenv script_img /media/boot/boot.scr.uimg; " \
 		"setenv kernel_name /media/boot/vmlinux.uimg; " \
-		"setenv script_part 0xb; " \
-		"setenv kernel_part 0xb; " \
-		"setenv rootpart 0xb; " \
+		"setenv script_part 0xc; " \
+		"setenv kernel_part 0xc; " \
+		"setenv rootpart 0xc; " \
 		"setenv devnum 0; " \
 		"setenv devtype mmc; " \
 		"setenv bootargs " \
