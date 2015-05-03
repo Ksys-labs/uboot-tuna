@@ -719,6 +719,27 @@ U_BOOT_CMD(tuna_check_cable, CONFIG_SYS_MAXARGS, 1, do_tuna_check_cable,
 	"Get Tuna (Galaxy Nexus) cable type\n",
 	"tuna_check_cable\n"
 );
+
+int do_tuna_fsa9480_open_int(cmd_tbl_t *cmdtp, int flag,
+	int argc, char * const argv[])
+{
+	u8 fsa9480_ctl_val[] = {0x1E};
+	int rtn;
+
+	tuna_clear_i2c4();
+	i2c_set_bus_num(TUNA_FSA9480_BUS);
+	rtn = i2c_write(TUNA_FSA9480_ADDR, FSA9480_REG_CTRL, 1, fsa9480_ctl_val, 1);
+	i2c_set_bus_num(0);
+
+	return (rtn < 0);
+}
+
+
+U_BOOT_CMD(tuna_fsa9480_open_int, 1, 1, do_tuna_fsa9480_open_int,
+	"Clear INT Mask bit(bit0) of FSA9480_REG_CTRL, and set it to proper state.",
+	"tuna_fsa9480_open_int\n"
+);
+
 /******************************************************************************
  * Framebuffer
  *****************************************************************************/

@@ -284,6 +284,7 @@
 		"mmc dev 0; " \
 		"tuna_get_bootmode; " \
 		"tuna_check_cable; " \
+		"tuna_fsa9480_open_int; " \
 		"if test $tuna_bootmode_val -eq 0; then " \
 			"echo Regular boot; " \
 			"run boot_system; " \
